@@ -1,0 +1,14 @@
+{
+  "name": "validFunction",
+  "customName": false,
+  "customRole": false,
+  "handler": "validFunction/handler.handler",
+  "timeout": 6,
+  "memorySize": 1024,
+  "custom": {
+    "excludePatterns": [],
+    "envVars": []
+  },
+  "endpoints": [],
+  "events": []
+}
