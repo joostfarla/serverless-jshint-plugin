@@ -38,6 +38,8 @@ Run the *jshint* action to check a function for errors:
 serverless function jshint someComponent/someFunction
 ```
 
+To apply custom configuration, add a `.jshintrc` file in the project root.
+
 ## Roadmap
 
 * Improve documentation

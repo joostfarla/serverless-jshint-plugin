@@ -4,7 +4,8 @@
  * Serverless CORS Plugin
  */
 module.exports = function(SPlugin, serverlessPath) {
-  const path = require('path'),
+  const _ = require('lodash'),
+    path = require('path'),
     Promise = require('bluebird'),
     SCli = require(path.join(serverlessPath, 'utils/cli')),
     SError = require(path.join(serverlessPath, 'ServerlessError')),
@@ -85,17 +86,30 @@ module.exports = function(SPlugin, serverlessPath) {
         func.handler.split('/').pop().split('.')[0] + '.js'
       );
 
-      return readFile(file, 'utf-8')
-        .then((data) => {
-          jshint(data, {
-            node: true
-          });
+      return this._getConfig()
+        .then(config => {
+          return readFile(file, 'utf-8')
+            .then(data => {
+              jshint(data, _.merge({
+                node: true
+              }, config));
 
-          if (jshint.errors.length > 0) {
-            return Promise.reject(jshint.errors);
-          }
+              if (jshint.errors.length > 0) {
+                return Promise.reject(jshint.errors);
+              }
 
-          return Promise.resolve();
+              return Promise.resolve();
+            });
+        });
+    }
+
+    _getConfig() {
+      return readFile(path.join(this.S.config.projectPath, '.jshintrc'), 'utf-8')
+        .then(config => {
+          return JSON.parse(config);
+        })
+        .catch(err => {
+          return {};
         });
     }
   }

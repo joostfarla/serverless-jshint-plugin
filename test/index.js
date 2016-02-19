@@ -24,14 +24,9 @@ const logger = function(log) {
 describe('ServerlessJSHint', function() {
   before(function() {
     this.timeout(0);
-
     s = new Serverless();
-    s.config.projectPath = path.join(__dirname, 'test-prj');
     plugin = new JSHintPlugin(s, { logger: logger });
     s.addPlugin(plugin);
-    s.state.setAsset(new s.classes.Component(s, { sPath: 'nodejs' }));
-    s.state.setAsset(new s.classes.Function(s, { sPath: 'nodejs/validFunction' }));
-    s.state.setAsset(new s.classes.Function(s, { sPath: 'nodejs/invalidFunction' }));
   });
 
   beforeEach(function() {
@@ -59,13 +54,31 @@ describe('ServerlessJSHint', function() {
     });
 
     it('should succeed for valid functions', function() {
+      s.config.projectPath = path.join(__dirname, 'test-prj');
+      s.state.setAsset(new s.classes.Component(s, { sPath: 'nodejs' }));
+      s.state.setAsset(new s.classes.Function(s, { sPath: 'nodejs/validFunction' }));
+
       return plugin.functionJSHint({ options: { path: 'nodejs/validFunction' }}).should.be.fulfilled.then(function() {
         logs[0].should.contain('Success!');
       });
     });
 
     it('should report errors for invalid functions', function() {
+      s.config.projectPath = path.join(__dirname, 'test-prj');
+      s.state.setAsset(new s.classes.Component(s, { sPath: 'nodejs' }));
+      s.state.setAsset(new s.classes.Function(s, { sPath: 'nodejs/invalidFunction' }));
+
       return plugin.functionJSHint({ options: { path: 'nodejs/invalidFunction' }}).should.be.fulfilled.then(function() {
+        logs[0].should.contain('Error!');
+      });
+    });
+
+    it('should apply a custom configuration file', function() {
+      s.config.projectPath = path.join(__dirname, 'test-prj-2');
+      s.state.setAsset(new s.classes.Component(s, { sPath: 'nodejs' }));
+      s.state.setAsset(new s.classes.Function(s, { sPath: 'nodejs/curlyFunction' }));
+
+      return plugin.functionJSHint({ options: { path: 'nodejs/curlyFunction' }}).should.be.fulfilled.then(function() {
         logs[0].should.contain('Error!');
       });
     });
