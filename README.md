@@ -12,7 +12,8 @@ adds support for [JSHint](http://jshint.com/) linting.
 
 ## Introduction
 
-This plugins adds capabilities to lint your Lambda functions before deploying.
+This plugins adds capabilities to lint your Lambda functions before deploying. It also
+saves you from deploying ES6 syntax by accident.
 
 ## Installation
 
