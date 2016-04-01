@@ -1,6 +1,6 @@
 {
   "name": "serverless-jshint-plugin",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Serverless JSHint Plugin - Detect errors and potential problems in your Lambda functions",
   "main": "src/index.js",
   "scripts": {
