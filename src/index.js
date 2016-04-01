@@ -3,20 +3,20 @@
 /**
  * Serverless CORS Plugin
  */
-module.exports = function(SPlugin, serverlessPath) {
+module.exports = function(S) {
   const _ = require('lodash'),
     path = require('path'),
     Promise = require('bluebird'),
-    SCli = require(path.join(serverlessPath, 'utils/cli')),
-    SError = require(path.join(serverlessPath, 'ServerlessError')),
+    SCli = require(S.getServerlessPath('utils/cli')),
+    SError = require(S.getServerlessPath('Error')),
     chalk = require('chalk'),
     jshint = require('jshint').JSHINT,
     readFile = Promise.promisify(require('fs').readFile),
     util = require('util');
 
-  class ServerlessJSHint extends SPlugin {
-    constructor(S, config) {
-      super(S, config);
+  class ServerlessJSHint extends S.classes.Plugin {
+    constructor(config) {
+      super();
       if (!config) config = {};
       this.log = config.logger || SCli.log;
     }
@@ -26,23 +26,16 @@ module.exports = function(SPlugin, serverlessPath) {
     }
 
     registerActions() {
-      this.S.addAction(this.functionJSHint.bind(this), {
+      S.addAction(this.functionJSHint.bind(this), {
         handler: 'functionJSHint',
         description: 'Detects errors and potential problems in your Lambda function',
         context: 'function',
         contextAction: 'jshint',
-        options: [
-          {
-            option: 'path',
-            shortcut: 'p',
-            description: 'Path of the function in this format: componentName/functionName'
-          }
-        ],
         parameters: [
           {
-            parameter: 'path',
-            description: 'Path of the function you want to run (componentName/functionName)',
-            position: '0'
+            parameter: 'names',
+            description: 'One or multiple function names',
+            position: '0->'
           }
         ]
       });
@@ -51,7 +44,7 @@ module.exports = function(SPlugin, serverlessPath) {
     }
 
     functionJSHint(evt) {
-      return this._validateAndPrepare(evt.options.path)
+      return this._validateAndPrepare(evt.options.names)
         .then(func => {
           return this._lint(func)
             .then(() => {
@@ -66,45 +59,43 @@ module.exports = function(SPlugin, serverlessPath) {
         });
     }
 
-    _validateAndPrepare(path) {
-      let functions = this.S.state.getFunctions({ paths: [path] });
-
-      if (functions.length === 0) {
-        return Promise.reject(util.format('No function found with path "%s".', path));
+    _validateAndPrepare(names) {
+      try {
+        return Promise.resolve(_.map(names, name => {
+          const func = S.getProject().getFunction(name);
+          if (!func) throw new SError(`Function "${name}" doesn't exist in your project`);
+          if (func.runtime !== 'nodejs') throw new SError('JSHint does not support runtimes other than "nodejs".');
+          return func;
+        }));
+      } catch (err) {
+        return Promise.reject(err);
       }
-
-      if (functions[0].getComponent().runtime !== 'nodejs') {
-        return Promise.reject('JSHint does not support runtimes other than "nodejs".');
-      }
-
-      return Promise.resolve(functions[0]);
     }
 
-    _lint(func) {
-      let file = path.join(
-        func._config.fullPath,
-        func.handler.split('/').pop().split('.')[0] + '.js'
-      );
+    _lint(functions) {
+      return Promise.each(functions, func => {
+        const file = func.getRootPath(func.handler.split('/').pop().split('.')[0] + '.js');
 
-      return this._getConfig()
-        .then(config => {
-          return readFile(file, 'utf-8')
-            .then(data => {
-              jshint(data, _.merge({
-                node: true
-              }, config));
+        return this._getConfig()
+          .then(config => {
+            return readFile(file, 'utf-8')
+              .then(data => {
+                jshint(data, _.merge({
+                  node: true
+                }, config));
 
-              if (jshint.errors.length > 0) {
-                return Promise.reject(jshint.errors);
-              }
+                if (jshint.errors.length > 0) {
+                  return Promise.reject(jshint.errors);
+                }
 
-              return Promise.resolve();
-            });
-        });
+                return Promise.resolve();
+              });
+          });
+      });
     }
 
     _getConfig() {
-      return readFile(path.join(this.S.config.projectPath, '.jshintrc'), 'utf-8')
+      return readFile(S.getProject().getRootPath('.jshintrc'), 'utf-8')
         .then(config => {
           return JSON.parse(config);
         })
