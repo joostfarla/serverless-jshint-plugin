@@ -55,6 +55,52 @@ describe('ServerlessJSHint', function() {
     });
   });
 
+  // different function lookup methods
+  describe('#_validateAndPrepare', function() {
+    beforeEach(function() {
+      s.cli = true;
+      _bootstrapFunction('validNodeFunction', 'nodejs');
+      _bootstrapFunction('otherValidNodeFunction', 'nodejs');
+      _bootstrapFunction('validPythonFunction', 'python2.7');
+
+      var me = this;
+      process.cwd = function() {
+        return me.tmpCwd || s.config.projectPath;
+      };
+    });
+
+    afterEach(function() {
+      this.tmpCwd = null;
+    });
+
+    it('should do all functions with --all flag', function() {
+      return plugin._validateAndPrepare([],{all: true}).should.be.fulfilled.then(function(funcs) {
+        funcs.should.lengthOf(2);
+      });
+    });
+
+    it('should do function in working dir', function() {
+      this.tmpCwd = `${s.config.projectPath}/otherValidNodeFunction`;
+      return plugin._validateAndPrepare([],{}).should.be.fulfilled.then(function(funcs) {
+        funcs.should.lengthOf(1);
+        funcs[0].getName().should.equal('otherValidNodeFunction');
+      });
+    });
+
+    it('should do all functions if no function in working dir', function() {
+      return plugin._validateAndPrepare([],{}).should.be.fulfilled.then(function(funcs) {
+        funcs.should.lengthOf(2);
+      });
+    });
+
+    it('should do function with provided name', function() {
+      return plugin._validateAndPrepare(['validNodeFunction'],{}).should.be.fulfilled.then(function(funcs) {
+        funcs.should.lengthOf(1);
+        funcs[0].getName().should.equal('validNodeFunction');
+      });
+    });
+  });
+
   describe('#functionJSHint()', function() {
     it('should fail for non-existing functions', function() {
       return plugin.functionJSHint({ options: { names: ['someFunction'] }}).should.be.rejected.then(function() {
@@ -62,10 +108,14 @@ describe('ServerlessJSHint', function() {
       });
     });
 
-    it('should succeed for valid functions', function() {
+    it('should error when no functions to lint', function() {
+      return plugin.functionJSHint({ options: { names: [] }}).should.be.rejected;
+    });
+
+    it('should succeed for all functions', function() {
       _bootstrapFunction('validNodeFunction', 'nodejs');
 
-      return plugin.functionJSHint({ options: { names: ['validNodeFunction'] }}).should.be.fulfilled.then(function() {
+      return plugin.functionJSHint({ options: { names: [], all: true }}).should.be.fulfilled.then(function() {
         logs[0].should.contain('Success!');
       });
     });
