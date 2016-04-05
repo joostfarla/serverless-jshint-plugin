@@ -33,8 +33,8 @@ module.exports = function(S) {
         contextAction: 'jshint',
         options: [
           {
-            option:      'all',
-            shortcut:    'a',
+            option: 'all',
+            shortcut: 'a',
             description: 'Optional - Deploy all Functions'
           }
         ],
@@ -66,36 +66,34 @@ module.exports = function(S) {
         });
     }
 
-    _getFuncs(names,options) {
+    _getFuncs(names, options) {
       // user passed the --all option
       if (options.all) {
         return S.getProject().getAllFunctions().filter(function(func) {
           return func.runtime === 'nodejs';
-        }); 
+        });
       }
 
       // no names or options so use cwd behavior
       // will return all functions if none in cwd
-      else if (S.cli && names.length === 0) {
+      if (S.cli && names.length === 0) {
         return S.utils.getFunctionsByCwd(S.getProject().getAllFunctions()).filter(function(func) {
           return func.runtime === 'nodejs';
         });
       }
 
       // return by passed name(s)
-      else {
-        return _.map(names, name => {
-          const func = S.getProject().getFunction(name);
-          if (!func) throw new SError(`Function ${name} does not exist in your project`);
-          if (func.runtime !== 'nodejs') throw new SError(`JSHint doesn't support runtimes other than "nodejs".`);
-          return func;
-        });
-      }
+      return _.map(names, name => {
+        const func = S.getProject().getFunction(name);
+        if (!func) throw new SError(`Function ${name} does not exist in your project`);
+        if (func.runtime !== 'nodejs') throw new SError(`JSHint doesn't support runtimes other than "nodejs".`);
+        return func;
+      });
     }
 
-    _validateAndPrepare(names,options) {
+    _validateAndPrepare(names, options) {
       try {
-        const funcs = this._getFuncs(names,options);
+        const funcs = this._getFuncs(names, options);
         if (funcs.length == 0) throw new SError("No nodejs functions found by jshint");
         return Promise.resolve(funcs);
       } catch (err) {

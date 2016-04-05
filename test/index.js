@@ -64,6 +64,7 @@ describe('ServerlessJSHint', function() {
       _bootstrapFunction('validPythonFunction', 'python2.7');
 
       var me = this;
+
       process.cwd = function() {
         return me.tmpCwd || s.config.projectPath;
       };

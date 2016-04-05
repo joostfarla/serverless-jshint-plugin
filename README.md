@@ -45,7 +45,6 @@ To apply custom configuration, add a `.jshintrc` file in the project root.
 ## Roadmap
 
 * Improve documentation
-* Add parameters to check whole projects
 * Add hooks to automate linting upon run or deployment
 
 ## License
