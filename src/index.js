@@ -31,6 +31,13 @@ module.exports = function(S) {
         description: 'Detects errors and potential problems in your Lambda function',
         context: 'function',
         contextAction: 'jshint',
+        options: [
+          {
+            option:      'all',
+            shortcut:    'a',
+            description: 'Optional - Deploy all Functions'
+          }
+        ],
         parameters: [
           {
             parameter: 'names',
@@ -44,7 +51,7 @@ module.exports = function(S) {
     }
 
     functionJSHint(evt) {
-      return this._validateAndPrepare(evt.options.names)
+      return this._validateAndPrepare(evt.options.names,evt.options)
         .then(func => {
           return this._lint(func)
             .then(() => {
@@ -59,14 +66,38 @@ module.exports = function(S) {
         });
     }
 
-    _validateAndPrepare(names) {
-      try {
-        return Promise.resolve(_.map(names, name => {
+    _getFuncs(names,options) {
+      // user passed the --all option
+      if (options.all) {
+        return S.getProject().getAllFunctions().filter(function(func) {
+          return func.runtime === 'nodejs';
+        }); 
+      }
+
+      // no names or options so use cwd behavior
+      // will return all functions if none in cwd
+      else if (S.cli && names.length === 0) {
+        return S.utils.getFunctionsByCwd(S.getProject().getAllFunctions()).filter(function(func) {
+          return func.runtime === 'nodejs';
+        });
+      }
+
+      // return by passed name(s)
+      else {
+        return _.map(names, name => {
           const func = S.getProject().getFunction(name);
-          if (!func) throw new SError(`Function "${name}" doesn't exist in your project`);
-          if (func.runtime !== 'nodejs') throw new SError('JSHint does not support runtimes other than "nodejs".');
+          if (!func) throw new SError(`Function ${name} does not exist in your project`);
+          if (func.runtime !== 'nodejs') throw new SError(`JSHint doesn't support runtimes other than "nodejs".`);
           return func;
-        }));
+        });
+      }
+    }
+
+    _validateAndPrepare(names,options) {
+      try {
+        const funcs = this._getFuncs(names,options);
+        if (funcs.length == 0) throw new SError("No nodejs functions found by jshint");
+        return Promise.resolve(funcs);
       } catch (err) {
         return Promise.reject(err);
       }
