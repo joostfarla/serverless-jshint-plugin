@@ -40,6 +40,10 @@ Run the *jshint* action to check one or multiple functions for errors:
 serverless function jshint someFunction someOtherFunction
 ```
 
+When no function names are provided, it will check all functions in the current
+working directory. You can also check the full project by passing the `--all` /
+`-a` flag.
+
 To apply custom configuration, add a `.jshintrc` file in the project root.
 
 ## Roadmap
