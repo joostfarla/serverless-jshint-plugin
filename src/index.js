@@ -86,7 +86,7 @@ module.exports = function(S) {
       return _.map(names, name => {
         const func = S.getProject().getFunction(name);
         if (!func) throw new SError(`Function ${name} does not exist in your project`);
-        if (func.runtime !== 'nodejs') throw new SError(`JSHint doesn't support runtimes other than "nodejs".`);
+        if (func.runtime.substring(0, 6) !== 'nodejs') throw new SError(`JSHint doesn't support runtimes other than "nodejs".`);
         return func;
       });
     }
