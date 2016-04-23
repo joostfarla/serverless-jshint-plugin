@@ -70,7 +70,7 @@ module.exports = function(S) {
       // user passed the --all option
       if (options.all) {
         return S.getProject().getAllFunctions().filter(function(func) {
-          return func.runtime === 'nodejs';
+          return func.runtime.substring(0, 6) === 'nodejs';
         });
       }
 
@@ -78,7 +78,7 @@ module.exports = function(S) {
       // will return all functions if none in cwd
       if (S.cli && names.length === 0) {
         return S.utils.getFunctionsByCwd(S.getProject().getAllFunctions()).filter(function(func) {
-          return func.runtime === 'nodejs';
+          return func.runtime.substring(0, 6) === 'nodejs';
         });
       }
 
