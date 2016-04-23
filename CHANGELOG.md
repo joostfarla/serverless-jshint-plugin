@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+* Support all Node runtimes
+
 ## 0.1.1
 
 * Support full and partial linting
